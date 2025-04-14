@@ -1,64 +1,54 @@
-# Powermate Driver
-This is a dead simple driver for Mac OS X to revive the Bluetooth version of the [Griffin Powermate](https://en.wikipedia.org/wiki/Griffin_PowerMate) in modern versions of OS X.  Tested on Catalina (.15).
+# Powermate Control Center (USB Version)
 
-[![Build Status](https://www.travis-ci.com/cedstrom/powermate-osx.svg?branch=main)](https://www.travis-ci.com/cedstrom/powermate-osx)
+This application is an adapted driver originally created in Bluetooth but adapted to work with USB for macOS Sequoia 15.1 and lower macOS's.
 
-## What does this do?
-This app runs in the menu bar and sends and receives NSDistributedNotifications for knob actions.
+This version has been specially adapted to integrate with [Hammerspoon](https://www.hammerspoon.org/) for control of Adobe Premiere Pro, allowing you to navigate the timeline with a physically with the wheel.  
 
-### Reading knob actions
+**Credit:**  
 
-The topic is ```kPowermateKnobNotification```.
+The original driver was created by Chris Edstrom, and you can find the original repository at [cedstrom/powermate-osx](https://github.com/cedstrom/powermate-osx?tab=readme-ov-file). This version was adapted by slickyslang (2025) to work with a USB Powermate device and to provide additional functionality for Adobe Premiere Pro.
 
-The values are:
+## What Does This Do?
 
-```kPowermateKnobPress```,
+This app runs as a menu bar application on macOS and communicates with the Griffin Powermate (USB version) by sending and receiving distributed notifications (`NSDistributedNotificationCenter`). A corresponding Hammerspoon configuration listens to these notifications and performs context-sensitive actions when Adobe Premiere Pro is the frontmost application:
 
-```kPowermateKnobRelease```,
-
-```kPowermateKnobCounterClockwise```,
-
-
-```kPowermateKnobClockwise```,
-
-```kPowermateKnobPressedCounterClockwise```,
-
-```kPowermateKnobPressedClockwise```,
-
-```kPowermateKnobPressed1Second```,
-
-```kPowermateKnobPressed2Second```,
-
-```kPowermateKnobPressed3Second```,
-
-```kPowermateKnobPressed4Second```,
-
-```kPowermateKnobPressed5Second```,
-
-```kPowermateKnobPressed6Second```
+- **Knob Press:**
+  - A single press (if no second press occurs within 0.3 seconds) toggles play/pause in Premiere (simulates a spacebar press).
+  - Two rapid presses toggle **Fast Mode** on/off.
+- **Knob Rotation:**
+  - In **Slow Mode**:
+    - Clockwise rotation sends asynchronous Right arrow presses.
+    - Counterclockwise rotation sends asynchronous Left arrow presses.
+    - The number of presses is determined by the device’s `rawValue` (rawValue=1 → 5 presses; rawValue≥2 → 10 presses).
+  - In **Fast Mode**:
+    - Clockwise rotation sends asynchronous Shift+Down arrow presses.
+    - Counterclockwise rotation sends asynchronous Shift+Up arrow presses.
+    - (5 or 10 presses as determined by `rawValue`.)
+- All keystrokes are sent only when Adobe Premiere Pro (bundle ID `"com.adobe.PremierePro.25"`) is the frontmost application. When Premiere loses focus, any pending keystroke sequences cancel automatically.
   
-Note that ```kPowermateKnobRelease``` is only sent after a long-press event, not after a single click.
+## What Is This Useful For?
 
-### Writing to the knob (LED Settings)
+I use this app to navigate the timeline in Adobe Premiere Pro quickly:
+- **Slow Mode** helps perform fine-grained adjustments by sending a small number of arrow key presses.
+- **Fast Mode** (toggled via a quick double-press of the knob) sends modified arrow keys (Shift+Up/Down) for larger jumps between clips.
+- A single press (if not toggling fast mode) also toggles play/pause in Premiere.
+  
+With Hammerspoon’s powerful automation, you can further customize these actions or extend the driver’s functionality to other applications.
 
-Publish to the topic ```kPowermateLEDNotification```.
+## Requirements
 
-It takes an NSDictionary ```userInfo``` with the keys ```fn``` and ```level```.
+- macOS (modern versions with IOKit support)
+- Griffin Powermate device (USB version)
 
-Off and on (obviously) do not take levels.  Just send ```kPowermateLEDOn``` or ```kPowermateLEDOff``` as the ```fn```.
+- [Hammerspoon](https://www.hammerspoon.org/) installed on your Mac
+- [ForceTouchMapper Spoon](https://www.hammerspoon.org/Spoons/ForceTouchMapper.html#apps) for additional Hammerspoon functionality
+  - **Installation:** Download the ForceTouchMapper spoon from the link above, then double-click the downloaded file to install it into Hammerspoon.
 
-To dim the knob, send fn ```kPowermateLEDLevel``` with a float from 0 to 1.
+-Drop the contents of knob.lua into your Hammerspoon init.lua and reload the config. (clone & compile) and then run PowerMate Control_USB.app.
+The menu bar item should change from ⭕ to 🎛️. This is to indicate you have a connection
 
-To flash the knob, send fn ```kPowermateLEDFlash``` with an int 0-32, the higher the faster the flash.
+Jump into Premier pro and scroll the timeline. 
 
-## What use is this to me?
-I use this as volume/mute knob for Zoom, but the possibilities are endless with [Hammerspoon](https://www.hammerspoon.org/).  See ```knob.lua``` for an example on how to easily control your system volume and mute your mic with Hammerspoon.  Of course, there are way more advanced setups.  For example, you can make Hammerspoon look at the current foregrounded app and do specific things per app (scrub a timeline, scroll pages, etc.), or you could add multiple global modes.
+If you want to add more applications or ad and adjust hot keys then just use ChatGPT write some simple code for the Knob.lua (hammerspoon config file) just open the config file in Hammerspoon and paste new code there. Save and then click reopen Config. 
 
 ## Getting Started
-Drop the contents of ```knob.lua``` into your Hammerspoon ```init.lua``` and reload the config.  Compile & run this app.
-
-You'll have to click your knob once or twice to wake it up and connect.  Once it does, the menu bar item should change from ⭕ to 🎛️.
-## Contributions Welcome!
-I hacked this together quickly to meet my needs but this is clearly that: a hack.  Improvements welcome!
-## License
-GNU GPL v3.  See ```LICENSE```
